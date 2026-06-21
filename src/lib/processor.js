@@ -69,13 +69,14 @@ export async function removeSection(data, ext, start, end) {
     await run([
       '-i', inp,
       '-filter_complex',
-      `[0:v]trim=0:${s},setpts=PTS-STARTPTS[v1];` +
-      `[0:v]trim=${e},setpts=PTS-STARTPTS[v2];` +
-      `[0:a]atrim=0:${s},asetpts=PTS-STARTPTS[a1];` +
-      `[0:a]atrim=${e},asetpts=PTS-STARTPTS[a2];` +
+      `[0:v]split=2[vi1][vi2];[0:a]asplit=2[ai1][ai2];` +
+      `[vi1]trim=0:${s},setpts=PTS-STARTPTS[v1];` +
+      `[vi2]trim=${e},setpts=PTS-STARTPTS[v2];` +
+      `[ai1]atrim=0:${s},asetpts=PTS-STARTPTS[a1];` +
+      `[ai2]atrim=${e},asetpts=PTS-STARTPTS[a2];` +
       `[v1][a1][v2][a2]concat=n=2:v=1:a=1[vo][ao]`,
       '-map', '[vo]', '-map', '[ao]',
-      '-c:v', 'libx264', '-c:a', 'aac', '-movflags', '+faststart',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-movflags', '+faststart',
       out,
     ])
   } else {
@@ -133,7 +134,7 @@ export async function joinAudio(data1, ext1, data2, ext2, insertAt, totalDuratio
         '-filter_complex',
         '[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1[vo][ao]',
         '-map', '[vo]', '-map', '[ao]',
-        '-c:v', 'libx264', '-c:a', 'aac', '-movflags', '+faststart',
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-movflags', '+faststart',
         out,
       ])
     } else {
@@ -141,13 +142,14 @@ export async function joinAudio(data1, ext1, data2, ext2, insertAt, totalDuratio
       await run([
         '-i', inp1, '-i', inp2,
         '-filter_complex',
-        `[0:v]trim=0:${s},setpts=PTS-STARTPTS[v1];` +
-        `[0:v]trim=${s},setpts=PTS-STARTPTS[v3];` +
-        `[0:a]atrim=0:${s},asetpts=PTS-STARTPTS[a1];` +
-        `[0:a]atrim=${s},asetpts=PTS-STARTPTS[a3];` +
+        `[0:v]split=2[vi1][vi3];[0:a]asplit=2[ai1][ai3];` +
+        `[vi1]trim=0:${s},setpts=PTS-STARTPTS[v1];` +
+        `[vi3]trim=${s},setpts=PTS-STARTPTS[v3];` +
+        `[ai1]atrim=0:${s},asetpts=PTS-STARTPTS[a1];` +
+        `[ai3]atrim=${s},asetpts=PTS-STARTPTS[a3];` +
         `[v1][a1][1:v][1:a][v3][a3]concat=n=3:v=1:a=1[vo][ao]`,
         '-map', '[vo]', '-map', '[ao]',
-        '-c:v', 'libx264', '-c:a', 'aac', '-movflags', '+faststart',
+        '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-movflags', '+faststart',
         out,
       ])
     }
@@ -170,7 +172,7 @@ export async function fadeIn(data, ext, dur) {
       '-i', inp,
       '-vf', `fade=t=in:st=0:d=${d}`,
       '-af', `afade=t=in:st=0:d=${d}`,
-      '-c:v', 'libx264', '-c:a', 'aac',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac',
       out,
     ])
   } else {
@@ -196,7 +198,7 @@ export async function fadeOut(data, ext, totalDuration, dur) {
       '-i', inp,
       '-vf', `fade=t=out:st=${st}:d=${d}`,
       '-af', `afade=t=out:st=${st}:d=${d}`,
-      '-c:v', 'libx264', '-c:a', 'aac',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac',
       out,
     ])
   } else {
@@ -251,7 +253,7 @@ export async function loopSection(data, ext, start, end, count) {
       `[0:v]trim=${e},setpts=PTS-STARTPTS[postv];[0:a]atrim=${e},asetpts=PTS-STARTPTS[posta];` +
       `[prev][prea][loopv][loopa][postv][posta]concat=n=3:v=1:a=1[vo][ao]`,
       '-map', '[vo]', '-map', '[ao]',
-      '-c:v', 'libx264', '-c:a', 'aac',
+      '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac',
       out,
     ])
   }
