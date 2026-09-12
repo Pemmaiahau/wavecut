@@ -33,13 +33,13 @@ These are set in three places that must stay in sync:
 - `vite.config.js` `server.headers` and `preview.headers` — for dev/preview.
 - `public/_headers` (copied to `dist/_headers` on build) — for the Cloudflare deploy target.
 
-## Deploy
-
-Cloudflare Workers Builds runs `npm run build` then `npx wrangler deploy`; `wrangler.jsonc` publishes `dist/` as static assets (SPA fallback). Keep that file: without it wrangler's auto-config parses `vite.config.js` with esprima (no `import.meta` support) and rewrites it to add `@cloudflare/vite-plugin`. In CI the Worker name comes from the dashboard (`WRANGLER_CI_OVERRIDE_NAME`), not from the config. `npx wrangler deploy --dry-run` validates the config locally.
-
 Consequences of `require-corp`:
 - `@ffmpeg/ffmpeg` and `@ffmpeg/util` are excluded from Vite's dep optimizer (`optimizeDeps.exclude`) because pre-bundling breaks the worker. The ffmpeg **core** wasm/js is fetched at runtime from the unpkg CDN (`@ffmpeg/core@0.12.6`, ffmpeg 5.1.4 with libx264/libvpx/libopus/libmp3lame/lavfi), pinned in `src/lib/processor.js` — not bundled, so loading requires network access.
 - MediaPipe's wasm runtime **cannot** be loaded from a CDN. The `mediapipeAssets` plugin in `vite.config.js` serves `/mediapipe/wasm/*` from `node_modules/@mediapipe/tasks-vision/wasm` in dev and copies those four files into `dist/` on build. The model (`public/models/selfie_segmenter.tflite`, ~250 KB) is committed and served same-origin.
+
+## Deploy
+
+Cloudflare Workers Builds runs `npm run build` then `npx wrangler deploy`; `wrangler.jsonc` publishes `dist/` as static assets (SPA fallback). Keep that file: without it wrangler's auto-config parses `vite.config.js` with esprima (no `import.meta` support) and rewrites it to add `@cloudflare/vite-plugin`. In CI the Worker name comes from the dashboard (`WRANGLER_CI_OVERRIDE_NAME`), not from the config. `npx wrangler deploy --dry-run` validates the config locally.
 
 ## Architecture
 
