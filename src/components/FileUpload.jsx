@@ -1,15 +1,15 @@
 import { useRef, useState } from 'react'
 
-const ACCEPTED = '.mp3,.mp4,.wav,.ogg,.webm,.m4a,.aac,.flac,.mov'
-const FORMATS  = ['MP3', 'MP4', 'WAV', 'OGG', 'WebM', 'M4A', 'AAC', 'FLAC', 'MOV']
+const ACCEPTED = '.mp3,.mp4,.wav,.ogg,.webm,.m4a,.aac,.flac,.mov,.mkv,.avi'
+const FORMATS  = ['MP3', 'MP4', 'WAV', 'OGG', 'WebM', 'M4A', 'AAC', 'FLAC', 'MOV', 'MKV', 'AVI']
 
 const FEATURES = [
-  { icon: '✂️', title: 'Cut & Remove', desc: 'Select any region and delete it instantly' },
-  { icon: '➕', title: 'Join Audio',   desc: 'Insert or append another file anywhere' },
-  { icon: '🔁', title: 'Loop Region',  desc: 'Repeat any selection multiple times' },
-  { icon: '↗️', title: 'Fade In/Out',  desc: 'Smooth volume ramps at any point' },
-  { icon: '↩️', title: 'Undo / Redo',  desc: 'Step back and forward through edits' },
-  { icon: '⬇️', title: 'Export',       desc: 'Download as MP3 or MP4' },
+  { icon: '✂️', title: 'Cut, Trim & Split', desc: 'Remove or keep a selection, split at the playhead' },
+  { icon: '🪄', title: 'Replace Background', desc: 'AI cut-out of people — swap in a photo, color or blur' },
+  { icon: '🎵', title: 'Extract Audio',      desc: 'Pull the soundtrack out of any video as MP3/WAV' },
+  { icon: '🖼️', title: 'Crop & Rotate',      desc: 'Reframe for 9:16, 1:1, 16:9 or free-form' },
+  { icon: '⏩', title: 'Speed, Fade, Loop',  desc: 'Time-stretch, fade in/out, repeat a region' },
+  { icon: '⬇️', title: 'Export',             desc: 'MP4, WebM, MP3, WAV or M4A — all on-device' },
 ]
 
 export default function FileUpload({ onFileSelect }) {

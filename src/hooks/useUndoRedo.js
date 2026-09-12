@@ -31,6 +31,12 @@ export function useUndoRedo(initial = null) {
     })
   }, [present])
 
+  // Swap the current state without touching history (e.g. normalising a
+  // freshly loaded file).
+  const replace = useCallback((next) => {
+    setPresent(next)
+  }, [])
+
   const reset = useCallback((next) => {
     setPast([])
     setPresent(next)
@@ -43,6 +49,7 @@ export function useUndoRedo(initial = null) {
     undo,
     redo,
     reset,
+    replace,
     canUndo:  past.length > 0,
     canRedo:  future.length > 0,
     historyLen: past.length,

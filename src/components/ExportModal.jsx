@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { exportFile, loadFfmpeg } from '../lib/processor'
+import { exportFile, loadFfmpeg, isVideoExt, setProgressHandler } from '../lib/processor'
 
 const FORMATS = [
-  { id: 'mp3', ext: 'MP3', desc: 'Best for audio sharing',   icon: '🎵' },
-  { id: 'mp4', ext: 'MP4', desc: 'Video or audio container', icon: '🎬' },
+  { id: 'mp4',  ext: 'MP4',  desc: 'Video, plays anywhere',    icon: '🎬', video: true },
+  { id: 'webm', ext: 'WebM', desc: 'Video, smaller & open',    icon: '🎞️', video: true },
+  { id: 'mp3',  ext: 'MP3',  desc: 'Audio only, small',        icon: '🎵' },
+  { id: 'wav',  ext: 'WAV',  desc: 'Audio only, lossless',     icon: '🎚️' },
+  { id: 'm4a',  ext: 'M4A',  desc: 'Audio only, AAC',          icon: '🎧' },
 ]
 
-function downloadBlob(data, filename) {
+export function downloadBlob(data, filename) {
   const blob   = new Blob([data])
   const url    = URL.createObjectURL(blob)
   const a      = document.createElement('a')
@@ -17,8 +20,10 @@ function downloadBlob(data, filename) {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove() }, 1000)
 }
 
-export default function ExportModal({ audioData, fileExt, ffmpegReady, onClose }) {
-  const [format,   setFormat]   = useState('mp3')
+export default function ExportModal({ audioData, fileExt, fileName, ffmpegReady, onClose }) {
+  const isVideo = isVideoExt(fileExt)
+  const formats = FORMATS.filter(f => isVideo || !f.video)
+  const [format,   setFormat]   = useState(isVideo ? 'mp4' : 'mp3')
   const [busy,     setBusy]     = useState(false)
   const [progress, setProgress] = useState(0)
   const [error,    setError]    = useState(null)
@@ -33,15 +38,18 @@ export default function ExportModal({ audioData, fileExt, ffmpegReady, onClose }
         await loadFfmpeg(p => setProgress(p))
       }
       setProgress(10)
+      setProgressHandler(p => setProgress(10 + Math.round(p * 0.85)))
       const result   = await exportFile(audioData, fileExt, format)
+      setProgressHandler(null)
       setProgress(95)
-      const baseName = 'wavecut-export'
-      downloadBlob(result, `${baseName}.${format}`)
+      const baseName = (fileName || 'wavecut-export').replace(/\.[^.]+$/, '')
+      downloadBlob(result, `${baseName}-wavecut.${format}`)
       setProgress(100)
       setTimeout(onClose, 400)
     } catch (e) {
       setError(e.message || 'Export failed')
     } finally {
+      setProgressHandler(null)
       setBusy(false)
     }
   }
@@ -60,7 +68,7 @@ export default function ExportModal({ audioData, fileExt, ffmpegReady, onClose }
         <div className="modal-section">
           <span className="modal-label">Output format</span>
           <div className="format-grid">
-            {FORMATS.map(f => (
+            {formats.map(f => (
               <div
                 key={f.id}
                 className={`format-option${format === f.id ? ' selected' : ''}`}
@@ -84,7 +92,7 @@ export default function ExportModal({ audioData, fileExt, ffmpegReady, onClose }
               <div className="progress-fill" style={{ width: `${progress}%` }} />
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-              {progress < 10 ? 'Loading engine…' : progress < 95 ? 'Encoding…' : 'Done!'}
+              {progress < 10 ? 'Loading engine…' : progress < 95 ? `Encoding… ${progress}%` : 'Done!'}
             </p>
           </div>
         )}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 import WaveSurfer from 'wavesurfer.js'
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js'
-import { getMimeType } from '../lib/processor'
+import { getMimeType, isVideoExt } from '../lib/processor'
 
 function fmt(t) {
   if (!isFinite(t) || t < 0) return '0:00'
@@ -11,14 +11,20 @@ function fmt(t) {
   return `${m}:${s.toString().padStart(2, '0')}.${ms}`
 }
 
+// `mediaElement` is the <video> rendered by VideoPreview; wavesurfer drives
+// it directly so the picture, audio and waveform cursor never drift apart.
+// `peaks` is only used for video files (see processor.prepareVideo) and is
+// tagged with the bytes it was computed for; the load waits until the tag
+// matches `audioData`.
 const WaveformEditor = forwardRef(function WaveformEditor(
-  { audioData, fileExt, onRegionChange, onDurationChange, onTimeUpdate, isProcessing },
+  { audioData, fileExt, mediaElement, peaks, onRegionChange, onDurationChange, onTimeUpdate, isProcessing },
   ref
 ) {
   const containerRef = useRef(null)
   const wsRef        = useRef(null)
   const regRef       = useRef(null)
   const blobRef      = useRef(null)
+  const loadedRef    = useRef(null)   // the Uint8Array currently loaded
 
   const [playing,  setPlaying]  = useState(false)
   const [curTime,  setCurTime]  = useState(0)
@@ -26,13 +32,15 @@ const WaveformEditor = forwardRef(function WaveformEditor(
   const [zoom,     setZoom]     = useState(50)
   const [ready,    setReady]    = useState(false)
 
-  // Init WaveSurfer once
+  // (Re)create WaveSurfer whenever the media element changes
   useEffect(() => {
+    if (!mediaElement) return
     const regions = RegionsPlugin.create()
     regRef.current = regions
 
     const ws = WaveSurfer.create({
       container:     containerRef.current,
+      media:         mediaElement,
       waveColor:     '#6366f1',
       progressColor: '#a78bfa',
       cursorColor:   'rgba(255,255,255,0.6)',
@@ -47,6 +55,7 @@ const WaveformEditor = forwardRef(function WaveformEditor(
     })
 
     wsRef.current = ws
+    loadedRef.current = null
 
     ws.on('ready', () => {
       const d = ws.getDuration()
@@ -77,27 +86,38 @@ const WaveformEditor = forwardRef(function WaveformEditor(
 
     return () => {
       ws.destroy()
-      if (blobRef.current) URL.revokeObjectURL(blobRef.current)
+      wsRef.current = null
+      if (blobRef.current) { URL.revokeObjectURL(blobRef.current); blobRef.current = null }
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mediaElement]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reload waveform when audioData changes
+  // Load the document into wavesurfer when the bytes (or, for video, the
+  // peaks for those bytes) become available.
   useEffect(() => {
-    if (!audioData || !wsRef.current) return
+    const ws = wsRef.current
+    if (!audioData || !ws) return
+    const video = isVideoExt(fileExt)
+    if (video && peaks?.forData !== audioData) return
+    if (loadedRef.current === audioData) return
+    loadedRef.current = audioData
+
     setReady(false)
     setPlaying(false)
     setCurTime(0)
 
     if (blobRef.current) URL.revokeObjectURL(blobRef.current)
-    const mime = getMimeType(fileExt)
-    const blob = new Blob([audioData], { type: mime })
+    const blob = new Blob([audioData], { type: getMimeType(fileExt) })
     const url  = URL.createObjectURL(blob)
     blobRef.current = url
 
-    wsRef.current.load(url)
+    if (video) {
+      ws.load(url, [peaks.samples]).catch(() => {})
+    } else {
+      ws.load(url).catch(() => {})
+    }
     regRef.current?.getRegions().forEach(r => r.remove())
     onRegionChange?.(null)
-  }, [audioData]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [audioData, peaks, mediaElement]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync zoom
   useEffect(() => {
@@ -127,6 +147,9 @@ const WaveformEditor = forwardRef(function WaveformEditor(
         <div className="waveform-inner">
           {!audioData && (
             <div className="waveform-empty">No file loaded</div>
+          )}
+          {audioData && !ready && (
+            <div className="waveform-empty">Analyzing audio…</div>
           )}
           <div ref={containerRef} />
         </div>

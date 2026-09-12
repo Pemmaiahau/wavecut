@@ -72,7 +72,7 @@ export default function JoinModal({ duration, currentTime, onJoin, onClose }) {
             <input
               ref={inputRef}
               type="file"
-              accept=".mp3,.mp4,.wav,.ogg,.webm,.m4a,.aac,.flac"
+              accept=".mp3,.mp4,.wav,.ogg,.webm,.m4a,.aac,.flac,.mov,.mkv,.avi"
               style={{ display: 'none' }}
               onChange={e => pickFile(e.target.files[0])}
             />
