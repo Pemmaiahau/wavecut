@@ -1,0 +1,14 @@
+{
+  // Cloudflare Workers static-assets deploy (`wrangler deploy`).
+  // Committed so Workers Builds does not run wrangler's auto-config, which
+  // rewrites vite.config.js and cannot parse the mediapipeAssets plugin.
+  // In Workers Builds the Worker name is taken from the dashboard
+  // (WRANGLER_CI_OVERRIDE_NAME), so `name` only matters for local deploys.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wavecut",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

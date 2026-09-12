@@ -1,14 +1,15 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { copyFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
 
 // MediaPipe's wasm runtime must be served same-origin: under
 // Cross-Origin-Embedder-Policy: require-corp the browser refuses to load it
 // from a CDN. This plugin serves /mediapipe/wasm/* straight out of
 // node_modules in dev, and copies the files into dist/ on build.
-const MP_WASM_DIR   = join(dirname(fileURLToPath(import.meta.url)), 'node_modules', '@mediapipe', 'tasks-vision', 'wasm')
+// process.cwd() rather than import.meta.url: wrangler's auto-config parses
+// this file with esprima, which does not understand import.meta.
+const MP_WASM_DIR   = join(process.cwd(), 'node_modules', '@mediapipe', 'tasks-vision', 'wasm')
 const MP_WASM_FILES = [
   'vision_wasm_internal.js',
   'vision_wasm_internal.wasm',

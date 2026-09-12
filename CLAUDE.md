@@ -31,7 +31,11 @@ Cross-Origin-Embedder-Policy: require-corp
 
 These are set in three places that must stay in sync:
 - `vite.config.js` `server.headers` and `preview.headers` — for dev/preview.
-- `public/_headers` (copied to `dist/_headers` on build) — for the Cloudflare Pages deploy target.
+- `public/_headers` (copied to `dist/_headers` on build) — for the Cloudflare deploy target.
+
+## Deploy
+
+Cloudflare Workers Builds runs `npm run build` then `npx wrangler deploy`; `wrangler.jsonc` publishes `dist/` as static assets (SPA fallback). Keep that file: without it wrangler's auto-config parses `vite.config.js` with esprima (no `import.meta` support) and rewrites it to add `@cloudflare/vite-plugin`. In CI the Worker name comes from the dashboard (`WRANGLER_CI_OVERRIDE_NAME`), not from the config. `npx wrangler deploy --dry-run` validates the config locally.
 
 Consequences of `require-corp`:
 - `@ffmpeg/ffmpeg` and `@ffmpeg/util` are excluded from Vite's dep optimizer (`optimizeDeps.exclude`) because pre-bundling breaks the worker. The ffmpeg **core** wasm/js is fetched at runtime from the unpkg CDN (`@ffmpeg/core@0.12.6`, ffmpeg 5.1.4 with libx264/libvpx/libopus/libmp3lame/lavfi), pinned in `src/lib/processor.js` — not bundled, so loading requires network access.
